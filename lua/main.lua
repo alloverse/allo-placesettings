@@ -11,29 +11,6 @@ assets = {
 }
 app.assetManager:add(assets)
 
-local admindata = {
-    {
-        display_name= "Decorator",
-        is_visor= false,
-        connected_at= 1643407779.0,
-        agent_id= "123"
-    },
-    {
-        display_name= "Marketplace",
-        is_visor= false,
-        connected_at= 1643407739.0,
-        agent_id= "456"
-    },
-    {
-        display_name= "Nevyn",
-        is_visor= true,
-        connected_at= 1643407830.0,
-        agent_id= "789"
-    },
-}
-local apps = tablex.filter(admindata, function(x) return not x.is_visor end )
-local people = tablex.filter(admindata, function(x) return x.is_visor end )
-
 local mainView = ui.Surface(
     ui.Bounds(0,1.5,0,   0.8, 0.5, 0.01)
         :rotate(-3.14/2, 0,1,0)
@@ -50,8 +27,17 @@ local heading = mainView:addSubview(ui.Label{
 })
 
 local stack = nil
+local admindata = nil
+--  {
+--      display_name= "Decorator",
+--      is_visor= false,
+--      connected_at= 1643407779.0,
+--      agent_id= "123"
+--  }
+function setAdminData(data)
+    if admindata and data and tablex.deepcompare(data, admindata) then return end
+    admindata = data
 
-local function setAdminData(data)
     if stack then stack:removeFromSuperview() end
     local c = #data
     local rowHeight = 0.06
@@ -60,10 +46,10 @@ local function setAdminData(data)
     local totalHeight = (rowHeight+rowMargin)*c + 0.08
     local w = mainView.bounds.size.width
     mainView.bounds.size.height = totalHeight
-    mainView:markAsDirty("transform")
+    mainView:setBounds()
 
     heading.bounds:moveToOrigin():move(mainView.bounds.size:getEdge("top", "center")):move(0.03, -0.03, 0)
-    heading:markAsDirty("transform")
+    heading:setBounds()
 
     stack = mainView:addSubview(ui.StackView(ui.Bounds(0,-heading.bounds.size.height/2,0, w, dataHeight, 0.01), "vert"))
     stack:margin(rowMargin)
@@ -80,14 +66,52 @@ local function setAdminData(data)
         icon:setTexture(client.is_visor and assets.person or assets.app)
         local bW = 0.15
         local kickButton = row:addSubview(ui.Button(
-            row.bounds:copy():insetEdges(w/1.4, 0.04, 0.01, 0.01, -0.02, 0.00)
+            row.bounds:copy():insetEdges(w/1.4, 0.04, 0.01, 0.01, -0.02, 0.006)
         ))
         kickButton.label:setText(client.is_visor and "Kick" or "Quit")
+        kickButton.onActivated = function()
+            print("kicking app", pretty.write(client))
+            app.client:sendInteraction({
+                sender_entity_id = mainView.entity.id,
+                receiver_entity_id = "place",
+                body = {
+                    "kick_agent",
+                    client.agent_id
+                }
+            }, function(resp, body)
+                if body[2] ~= "ok" then
+                    print("not kicking:", body[3])
+                    ui.StandardAnimations.addFailureAnimation(kickButton, 0.03)
+                    return
+                end
+                print("ok!")
+                fetchAdminData()
+            end)
+        end
     end
     stack:layout()
 end
 
-setAdminData(admindata)
+function fetchAdminData()
+    app.client:sendInteraction({
+        sender_entity_id = mainView.entity.id,
+        receiver_entity_id = "place",
+        body = {
+            "list_agents"
+        }
+    }, function(resp, body)
+        if body[1] ~= "list_agents" and body[2] ~= "ok" then return end
+        setAdminData(body[3])
+    end)
+end
+
+setAdminData({})
+mainView:doWhenAwake(function()
+    app:scheduleAction(1, true, function()
+        fetchAdminData()
+    end)
+    
+end)
 
 app.mainView = mainView
 
