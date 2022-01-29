@@ -11,14 +11,17 @@ assets = {
 }
 app.assetManager:add(assets)
 
-local mainView = ui.Surface(
-    ui.Bounds(0,1.5,0,   0.8, 0.5, 0.01)
+local root = ui.View(
+    ui.Bounds(0,1.5,0,   0.8, 1, 0.01)
         :rotate(-3.14/2, 0,1,0)
         :move(-5,0,2)
 )
-mainView:setColor({0.7,0.7,0.7,1})
+root.grabbable = true
 
-mainView.grabbable = true
+local mainView = root:addSubview(ui.Surface(
+    ui.Bounds(0,0,0,   0.8, 0.5, 0.01)
+))
+mainView:setColor({0.7,0.7,0.7,1})
 
 local heading = mainView:addSubview(ui.Label{
     bounds= ui.Bounds(0,0,0,  mainView.bounds.size.width, 0.05, 0.01),
@@ -120,7 +123,7 @@ mainView:doWhenAwake(function()
     
 end)
 
-app.mainView = mainView
+app.mainView = root
 
 app:connect()
 app:run()
