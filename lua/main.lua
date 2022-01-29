@@ -32,7 +32,8 @@ local admindata = nil
 --      display_name= "Decorator",
 --      is_visor= false,
 --      connected_at= 1643407779.0,
---      agent_id= "123"
+--      agent_id= "123",
+--      stats= "asdf"
 --  }
 function setAdminData(data)
     if admindata and data and tablex.deepcompare(data, admindata) then return end
@@ -66,7 +67,7 @@ function setAdminData(data)
         icon:setTexture(client.is_visor and assets.person or assets.app)
         local bW = 0.15
         local kickButton = row:addSubview(ui.Button(
-            row.bounds:copy():insetEdges(w/1.4, 0.04, 0.01, 0.01, -0.02, 0.006)
+            row.bounds:copy():insetEdges(w/1.3, 0.04, 0.01, 0.01, -0.02, 0.006)
         ))
         kickButton.label:setText(client.is_visor and "Kick" or "Quit")
         kickButton.onActivated = function()
@@ -88,6 +89,12 @@ function setAdminData(data)
                 fetchAdminData()
             end)
         end
+        local statsLabel = row:addSubview(ui.Label{
+            bounds= row.bounds:copy():insetEdges(w/1.8, kickButton.bounds:getEdge("left"), 0.025, 0.024, -0.02, 0.006),
+            wrap= true,
+            text= client.stats,
+            halign= "left"
+        })
     end
     stack:layout()
 end
