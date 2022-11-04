@@ -21,7 +21,7 @@ local root = ui.View(
 )
 root.grabbable = true
 
-local manager = PlaceManager()
+local manager = PlaceManager(app)
 root:doWhenAwake(function()
     app:scheduleAction(1, true, function()
         manager:refresh()
@@ -30,7 +30,7 @@ end)
 
 
 local dockView = root:addSubview(ui.StackView(
-    ui.Bounds(0,0,0,   0.4, 0.4, 0.01)
+    ui.Bounds(0,0,0,   0.4, 0.3, 0.01)
         :rotate(-3.14/8, 1,0,0),
     "horizontal"
 ))
@@ -43,33 +43,138 @@ local dockView = root:addSubview(ui.StackView(
 --    heading:setText(app.client.placename)
 --end)
 
-local appDock = dockView:addSubview(ui.StackView(
-    ui.Bounds(0,0,0, 0.4, 0.4, 0.01),
-    "horizontal"
-))
 local userDock = dockView:addSubview(ui.StackView(
-    ui.Bounds(0,0,0, 0.4, 0.4, 0.01),
+    ui.Bounds(0,0,0, 0.4, 0.3, 0.01),
+    "horizontal"
+))
+local appDock = dockView:addSubview(ui.StackView(
+    ui.Bounds(0,0,0, 0.4, 0.3, 0.01),
     "horizontal"
 ))
 
 
-class.AgentView(ui.Button)
+
+class.AgentView(ui.Button.Cube)
 function AgentView:_init(agent)
-    self:super(ui.Bounds(0,0,0,  0.1, 0.15, 0.05))
+    self:super(ui.Bounds(0,0,0,  0.3, 0.3, 0.10))
     self.agent = agent
     self.label.text = agent.display_name
-    self.defaultTexture = agent.is_visor and assets.person or assets.app
+    self.icon = self:addSubview(ui.Surface(self.bounds:copy()))
+    self.icon:setTexture(agent.is_visor and assets.person or assets.app)
 end
 
-manager.onAppAdded = function(agent)
-    local button = AgentView(agent)
-    appDock:addSubview(button)
-    dockView:layout()
+function AgentView:layout()
+    ui.Button.Cube.layout(self)
+    self.icon:setBounds(self.label.bounds:copy():insetEdges(0.05, 0.05, 0.00, 0.08, 0, 0))
+    self.label.bounds:insetEdges(0,0, self.bounds.size.height*0.57, 0, 0, 0)
 end
-manager.onUserAdded = function(agent)
+
+function AgentView:_pullUpDetails(details)
+    if details.superview then return end
+    
+
+    details.transform = mat4.scale(mat4.new(), mat4.new(), vec3.new(0,0,0))
+    self:addSubview(details)
+    details:doWhenAwake(function()
+        details:addPropertyAnimation(ui.PropertyAnimation{
+            path= "transform.matrix",
+            to= mat4.scale(mat4.new(), details.bounds.pose.transform, vec3.new(0,0,0)),
+            from=   mat4.new(details.bounds.pose.transform),
+            duration = 0.6,
+            easing= "elasticOut"
+        })
+    end)
+end
+
+function AgentView:_pullDownDetails(details)
+    if not details.superview then return end
+    details:addPropertyAnimation(ui.PropertyAnimation{
+        path= "transform.matrix",
+        from= mat4.scale(mat4.new(), details.bounds.pose.transform, vec3.new(0,0,0)),
+        to=   mat4.new(details.bounds.pose.transform),
+        duration = 0.2,
+        easing= "quadIn"
+    })
+    details.app:scheduleAction(0.2, false, function() 
+        if details.superview then
+            details:removeFromSuperview()
+        end
+    end)
+end
+
+class.AgentDetails(ui.Surface)
+function AgentDetails:_init(agent)
+    self:super(ui.Bounds(0,0,0,  0.3, 0.4, 0.01))
+    self.agent = agent
+    self.stack = self:addSubview(ui.StackView(self.bounds:copy(), "vertical"))
+    self.stats = self.stack:addSubview(ui.Label{
+        wrap= true,
+        halign= "left",
+        text= agent.stats,
+        bounds= ui.Bounds{size=ui.Size(0.3, 0.2, 0.01)},
+        lineHeight= 0.03,
+    })
+    self.goTo = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Go to"))
+    if agent.is_visor then
+        self.ping = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Get attention"))
+        self.kill = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Kick"))
+    else
+        self.quit = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Quit"))
+        self.kill = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Force Quit"))
+    end
+
+    if self.quit ~= nil then
+        self.quit.onActivated = function()
+            agent:quit(function(ok)
+                if not ok then
+                    ui.StandardAnimations.addFailureAnimation(self, 0.03)
+                else
+                    manager:refresh()
+                end
+            end)
+        end
+    end
+    self.kill.onActivated = function() 
+        agent:kill(function(ok)
+            if not ok then
+                ui.StandardAnimations.addFailureAnimation(self, 0.03)
+            else
+                manager:refresh()
+            end
+        end)
+    end
+
+    self.bounds:move(0,0.5,0):rotate(3.14/8, 1,0,0)
+    self:layout()
+end
+
+function AgentDetails:layout()
+    ui.Surface.layout(self)
+    self.stack:layout()
+    self.bounds.size = self.stack.bounds.size:copy()
+    self:setBounds()
+end
+
+manager.onAgentAdded = function(agent)
     local button = AgentView(agent)
-    userDock:addSubview(button)
-    dockView:layout()
+    agent.button = button;
+    (agent.is_visor and userDock or appDock):addSubview(button)
+    agent.details = AgentDetails(agent)
+
+    button.onActivated = function(hand)
+        if not agent.details.superview then
+            button:_pullUpDetails(agent.details)
+        else
+            button:_pullDownDetails(agent.details)
+        end
+    end
+
+    root:layout()
+end
+manager.onAgentRemoved = function(agent)
+    agent.button:removeFromSuperview()
+    agent.details:removeFromSuperview()
+    root:layout()
 end
 
 app.mainView = root
