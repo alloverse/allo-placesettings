@@ -88,8 +88,12 @@ end
 
 class.PlaceAgent()
 function PlaceAgent:quit(cb)
+    if not self.avatar_id then
+        cb(false)
+        return
+    end
     self.app.client:sendInteraction({
-        receiver_entity_id = self.agent_id,
+        receiver_entity_id = self.avatar_id,
         body = {
             "quit"
         }
