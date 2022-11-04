@@ -9,7 +9,8 @@ class.PlaceManager()
 --      stats= "asdf"
 --  }
 
-function PlaceManager:_init()
+function PlaceManager:_init(app)
+    self.app = app
     self.agents = {}
     self.apps = {}
     self.users = {}
@@ -48,6 +49,8 @@ function PlaceManager:_setData(data)
         newAgents[agent.agent_id] = agent
         if not existing then
             setmetatable(agent, PlaceAgent)
+            agent.app = self.app
+            agent.manager = self
             self.agents[agent.agent_id] = agent
             self.onAgentAdded(agent)
             if agent.is_visor then
@@ -85,7 +88,7 @@ end
 
 class.PlaceAgent()
 function PlaceAgent:quit(cb)
-    app.client:sendInteraction({
+    self.app.client:sendInteraction({
         receiver_entity_id = self.agent_id,
         body = {
             "quit"
@@ -95,24 +98,24 @@ function PlaceAgent:quit(cb)
             cb(false)
         else
             cb(true)
-            self:refresh()
+            self.manager:refresh()
         end
     end)
 end
 
 function PlaceAgent:kill(cb)
-    app.client:sendInteraction({
+    self.app.client:sendInteraction({
         receiver_entity_id = "place",
         body = {
             "kick_agent",
-            client.agent_id
+            self.agent_id
         }
     }, function(resp, body)
         if body[2] ~= "ok" then
             cb(false)
         else
             cb(true)
-            self:refresh()
+            self.manager:refresh()
         end
     end)
 end
