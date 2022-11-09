@@ -19,7 +19,6 @@ local root = ui.View(
         
         :move(-2.6, 0, 0.5)
 )
-root.grabbable = true
 
 local manager = PlaceManager(app)
 root:doWhenAwake(function()
