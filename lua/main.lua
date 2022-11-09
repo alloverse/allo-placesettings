@@ -13,11 +13,13 @@ assets = {
 }
 app.assetManager:add(assets)
 
+local tileSize = 0.25
+
 local root = ui.View(
     ui.Bounds(0,0.8,0,   0.8, 0.5, 0.01)
         :rotate(3.14/2, 0,1,0)
         
-        :move(-2.6, 0, 0.5)
+        :move(-2.8, 0, 0.42)
 )
 
 local manager = PlaceManager(app)
@@ -29,7 +31,7 @@ end)
 
 
 local dockView = root:addSubview(ui.StackView(
-    ui.Bounds(0,0,0,   0.4, 0.3, 0.01)
+    ui.Bounds(0,0,0,   0.4, tileSize, 0.01)
         :rotate(-3.14/8, 1,0,0),
     "horizontal"
 ))
@@ -43,11 +45,11 @@ local dockView = root:addSubview(ui.StackView(
 --end)
 
 local userDock = dockView:addSubview(ui.StackView(
-    ui.Bounds(0,0,0, 0.4, 0.3, 0.01),
+    ui.Bounds(0,0,0, 0.4, tileSize, 0.01),
     "horizontal"
 ))
 local appDock = dockView:addSubview(ui.StackView(
-    ui.Bounds(0,0,0, 0.4, 0.3, 0.01),
+    ui.Bounds(0,0,0, 0.4, tileSize, 0.01),
     "horizontal"
 ))
 
@@ -55,7 +57,7 @@ local appDock = dockView:addSubview(ui.StackView(
 
 class.AgentView(ui.Button.Cube)
 function AgentView:_init(agent)
-    self:super(ui.Bounds(0,0,0,  0.3, 0.3, 0.10))
+    self:super(ui.Bounds(0,0,0,  tileSize, tileSize, 0.10))
     self.agent = agent
     self.label.text = agent.display_name
     self.icon = self:addSubview(ui.Surface(self.bounds:copy()))
@@ -105,13 +107,14 @@ class.AgentDetails(ui.Surface)
 function AgentDetails:_init(agent)
     self:super(ui.Bounds(0,0,0,  0.3, 0.4, 0.01))
     self.agent = agent
-    self.stack = self:addSubview(ui.StackView(self.bounds:copy(), "vertical"))
+    self.stack = self:addSubview(ui.StackView(self.bounds:copy():move(0,0,0.025), "vertical"))
     self.stats = self.stack:addSubview(ui.Label{
         wrap= true,
         halign= "left",
-        text= agent.stats,
+        text= "Stats for nerds:\n"..agent.stats,
         bounds= ui.Bounds{size=ui.Size(0.3, 0.2, 0.01)},
         lineHeight= 0.03,
+        color= {0,0,0,1},
     })
     self.goTo = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Go to"))
     if agent.is_visor then
@@ -150,7 +153,7 @@ end
 function AgentDetails:layout()
     ui.Surface.layout(self)
     self.stack:layout()
-    self.bounds.size = self.stack.bounds.size:copy()
+    self.bounds.size = self.stack.bounds.size:copy():inset(-0.05, -0.05, 0)
     self:setBounds()
 end
 
