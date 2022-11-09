@@ -172,7 +172,6 @@ manager.onAgentAdded = function(agent)
 end
 manager.onAgentRemoved = function(agent)
     agent.button:removeFromSuperview()
-    agent.details:removeFromSuperview()
     root:layout()
 end
 
