@@ -62,11 +62,11 @@ function PlaceManager:_setData(data)
             end
         else
             tablex.update(existing, agent)
-            self.onAgentUpdated(agent)
+            self.onAgentUpdated(existing)
             if agent.is_visor then
-                self.onUserUpdated(agent)
+                self.onUserUpdated(existing)
             else
-                self.onAppUpdated(agent)
+                self.onAppUpdated(existing)
             end
         end
     end

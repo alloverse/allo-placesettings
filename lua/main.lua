@@ -111,7 +111,6 @@ function AgentDetails:_init(agent)
     self.stats = self.stack:addSubview(ui.Label{
         wrap= true,
         halign= "left",
-        text= "Stats for nerds:\n"..agent.stats,
         bounds= ui.Bounds{size=ui.Size(0.3, 0.2, 0.01)},
         lineHeight= 0.03,
         color= {0,0,0,1},
@@ -147,7 +146,12 @@ function AgentDetails:_init(agent)
     end
 
     self.bounds:move(0,0.5,0):rotate(3.14/8, 1,0,0)
+    self:update()
     self:layout()
+end
+
+function AgentDetails:update()
+    self.stats:setText("Stats for nerds:\n"..self.agent.stats)
 end
 
 function AgentDetails:layout()
@@ -173,6 +177,11 @@ manager.onAgentAdded = function(agent)
 
     root:layout()
 end
+
+manager.onAgentUpdated = function(agent)
+    agent.details:update()
+end
+
 manager.onAgentRemoved = function(agent)
     agent.button:removeFromSuperview()
     root:layout()
