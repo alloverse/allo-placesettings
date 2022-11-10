@@ -124,4 +124,43 @@ function PlaceAgent:kill(cb)
     end)
 end
 
+function PlaceAgent:teleportUser(user_avatar, cb)
+    self.app.client:getEntity(self.avatar_id, function(app_entity)
+        local m = app_entity.components.transform:transformFromWorld()
+        self.app.client:sendInteraction({
+            receiver_entity_id = user_avatar.id,
+            body = {
+                "teleport",
+                Pose(m):tojson()
+            }
+        }, function(resp, body)
+            if body[2] ~= "ok" then
+                cb(false)
+            else
+                cb(true)
+            end
+        end)
+    end)
+end
+
+function PlaceAgent:sendPingFrom(sender_avatar, cb)
+    local senderName = "a user"
+    self.app.client:sendInteraction({
+        receiver_entity_id = self.avatar_id,
+        body = {
+            "postNotification",
+            {
+                title= "Ping from "..senderName.."!",
+                body= "hello hello!"
+            }
+        }
+    }, function(resp, body)
+        if body[2] ~= "ok" then
+            cb(false)
+        else
+            cb(true)
+        end
+    end)
+end
+
 return PlaceManager

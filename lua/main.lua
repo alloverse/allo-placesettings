@@ -116,8 +116,25 @@ function AgentDetails:_init(agent)
         color= {0,0,0,1},
     })
     self.goTo = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Go to"))
+    self.goTo.onActivated = function(hand) 
+        local avatar = hand:getAncestor()
+        agent:teleportUser(avatar, function(ok)
+            if not ok then
+                ui.StandardAnimations.addFailureAnimation(self, 0.03)
+            end
+        end)
+    end
+    
     if agent.is_visor then
         self.ping = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Get attention"))
+        self.ping.onActivated = function(hand) 
+            local avatar = hand:getAncestor()
+            agent:sendPingFrom(avatar, function(ok)
+                if not ok then
+                    ui.StandardAnimations.addFailureAnimation(self, 0.03)
+                end
+            end)
+        end
         self.kill = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Kick"))
     else
         self.quit = self.stack:addSubview(ui.Button(ui.Bounds{size=ui.Size(0.3, 0.08, 0.05)}, "Quit"))
