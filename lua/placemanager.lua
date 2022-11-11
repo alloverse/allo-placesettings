@@ -148,7 +148,7 @@ function PlaceAgent:sendPingFrom(sender_avatar, cb)
     self.app.client:sendInteraction({
         receiver_entity_id = self.avatar_id,
         body = {
-            "postNotification",
+            "post_notification",
             {
                 title= "Ping from "..senderName.."!",
                 body= "hello hello!"
