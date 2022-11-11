@@ -121,6 +121,8 @@ function AgentDetails:_init(agent)
         agent:teleportUser(avatar, function(ok)
             if not ok then
                 ui.StandardAnimations.addFailureAnimation(self, 0.03)
+            else
+                self:pullDown()
             end
         end)
     end
@@ -132,6 +134,8 @@ function AgentDetails:_init(agent)
             agent:sendPingFrom(avatar, function(ok)
                 if not ok then
                     ui.StandardAnimations.addFailureAnimation(self, 0.03)
+                else
+                    self:pullDown()
                 end
             end)
         end
@@ -176,6 +180,10 @@ function AgentDetails:layout()
     self.stack:layout()
     self.bounds.size = self.stack.bounds.size:copy():inset(-0.05, -0.05, 0)
     self:setBounds()
+end
+
+function AgentDetails:pullDown()
+    self.superview:_pullDownDetails(self)
 end
 
 manager.onAgentAdded = function(agent)
