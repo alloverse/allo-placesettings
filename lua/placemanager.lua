@@ -127,11 +127,28 @@ end
 function PlaceAgent:teleportUser(user_avatar, cb)
     self.app.client:getEntity(self.avatar_id, function(app_entity)
         local m = app_entity.components.transform:transformFromWorld()
+        local pos = m * vec3.new()
+        -- some apps don't have an origin on the floor, so move the destination point down
+        -- if we're teleporting to a user though, make sure we def end up in front of them
+        if not self.is_visor then
+            pos.y = 0
+        end
+        local trans = mat4.translate(mat4.identity(), mat4.identity(), pos)
+        local rot = mat4.from_quaternion(m:to_quat())
+        --rot:rotate(rot, 3.14, vec3(0,1,0)) -- face TOWARDS thing
+        local invRot = mat4.invert(mat4.new(), rot)
+        
+        local moved_back = mat4.identity()
+        moved_back:translate(moved_back, vec3(0,0,1.5))
+
+        local new_transform = mat4.identity()
+        new_transform:rotate(new_transform, 3.14/2, vec3(0,1,0))
+        
         self.app.client:sendInteraction({
             receiver_entity_id = user_avatar.id,
             body = {
                 "teleport",
-                Pose(m):tojson()
+                Pose(new_transform):tojson()
             }
         }, function(resp, body)
             if body[2] ~= "ok" then
